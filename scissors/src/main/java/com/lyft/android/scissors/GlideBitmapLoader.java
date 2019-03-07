@@ -21,14 +21,14 @@ import android.widget.ImageView;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.RequestManager;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
-import com.bumptech.glide.load.engine.bitmap_recycle.BitmapPool;
 import com.bumptech.glide.load.resource.bitmap.BitmapTransformation;
+import com.bumptech.glide.request.RequestOptions;
 
 /**
  * A {@link BitmapLoader} with transformation for {@link Glide} image library.
  *
  * @see GlideBitmapLoader#createUsing(CropView)
- * @see GlideBitmapLoader#createUsing(CropView, RequestManager, BitmapPool)
+ * @see GlideBitmapLoader#createUsing(CropView, RequestManager)
  */
 public class GlideBitmapLoader implements BitmapLoader {
 
@@ -42,21 +42,24 @@ public class GlideBitmapLoader implements BitmapLoader {
 
     @Override
     public void load(@Nullable Object model, @NonNull ImageView imageView) {
-        requestManager.load(model)
-                .asBitmap()
-                .skipMemoryCache(true)
-                .diskCacheStrategy(DiskCacheStrategy.SOURCE)
-                .transform(transformation)
-                .into(imageView);
+        RequestOptions requestOptions = new RequestOptions();
+        requestOptions.skipMemoryCache(true)
+            .diskCacheStrategy(DiskCacheStrategy.DATA)
+            .transform(transformation);
+
+        requestManager.asBitmap()
+            .load(model)
+            .apply(requestOptions);
     }
 
     public static BitmapLoader createUsing(@NonNull CropView cropView) {
-        return createUsing(cropView, Glide.with(cropView.getContext()), Glide.get(cropView.getContext()).getBitmapPool());
+        return createUsing(cropView, Glide.with(cropView.getContext()));
     }
 
-    public static BitmapLoader createUsing(@NonNull CropView cropView, @NonNull RequestManager requestManager,
-            @NonNull BitmapPool bitmapPool) {
-        return new GlideBitmapLoader(requestManager,
-                GlideFillViewportTransformation.createUsing(bitmapPool, cropView.getViewportWidth(), cropView.getViewportHeight()));
+    public static BitmapLoader createUsing(@NonNull CropView cropView, @NonNull RequestManager requestManager) {
+        return new GlideBitmapLoader(
+            requestManager,
+            GlideFillViewportTransformation.createUsing(cropView.getViewportWidth(), cropView.getViewportHeight())
+        );
     }
 }
